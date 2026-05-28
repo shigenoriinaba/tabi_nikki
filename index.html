@@ -10,6 +10,7 @@
 <script type="module">
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, collection, doc, setDoc, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+import { getStorage, ref, uploadBytes, getDownloadURL, deleteObject } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyBb7rTjebkdfKsOl6PVVDKpPNQFaKKy92c",
@@ -22,6 +23,18 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
+const storage = getStorage(app);
+
+// 写真をStorageにアップロード
+window.fbUploadPhoto = async (file, entryId, index) => {
+  const storageRef = ref(storage, `photos/${entryId}/${index}_${file.name}`);
+  const snapshot = await uploadBytes(storageRef, file);
+  const url = await getDownloadURL(snapshot.ref);
+  return url;
+};
+window.fbDeletePhoto = async (path) => {
+  try { await deleteObject(ref(storage, path)); } catch(e) {}
+};
 
 // Firebaseへの保存
 window.fbSaveEntry = async (entry) => {
@@ -72,12 +85,16 @@ window.dispatchEvent(new Event('fbReady'));
   --shadow-md: 0 4px 16px rgba(0,0,0,.08), 0 1px 4px rgba(0,0,0,.04);
 }
 * { box-sizing: border-box; margin: 0; padding: 0; }
+html { overflow-x: hidden; }
 body {
   font-family: 'Noto Sans JP', sans-serif;
   background: var(--bg);
   color: var(--text);
   min-height: 100vh;
   font-size: 15px;
+  overflow-x: hidden;
+  width: 100%;
+  max-width: 100vw;
 }
 /* HEADER */
 .header {
@@ -102,8 +119,11 @@ body {
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   overflow-x: auto;
-  padding: 0 12px;
+  padding: 0 8px;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
 }
+.tabs::-webkit-scrollbar { display: none; }
 .tab {
   padding: 14px 16px;
   font-size: 13px; font-weight: 500;
@@ -119,7 +139,7 @@ body {
 .tab:hover:not(.active) { color: var(--text2); }
 
 /* CONTENT */
-.content { max-width: 640px; margin: 0 auto; padding: 24px 16px 80px; }
+.content { max-width: 640px; margin: 0 auto; padding: 16px 12px 80px; width: 100%; }
 .panel { display: none; }
 .panel.active { display: block; }
 
@@ -140,6 +160,7 @@ input:focus, textarea:focus, select:focus {
 }
 textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 360px) { .row2 { grid-template-columns: 1fr; } }
 
 /* MOOD */
 .mood-row { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -184,6 +205,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 }
 .photo-drop:hover { background: var(--surface2); border-color: var(--accent); color: var(--accent); }
 .photo-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+@media (max-width: 400px) { .photo-grid { grid-template-columns: repeat(3, 1fr); } }
 .photo-thumb { aspect-ratio: 1; border-radius: var(--radius-sm); overflow: hidden; position: relative; }
 .photo-thumb img { width: 100%; height: 100%; object-fit: cover; }
 .photo-del {
@@ -210,11 +232,11 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
   transition: all .15s; font-family: 'Noto Sans JP', sans-serif;
 }
 .btn-secondary:hover { background: var(--surface2); }
-.btn-row { display: flex; gap: 10px; margin-top: 20px; flex-wrap: wrap; }
+.btn-row { display: flex; gap: 8px; margin-top: 20px; flex-wrap: wrap; width: 100%; }
 .save-msg { font-size: 13px; color: var(--accent); margin-top: 10px; display: none; font-weight: 500; }
 
 /* SECTION HEADER */
-.section-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; }
+.section-header { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 20px; flex-wrap: wrap; gap: 10px; width: 100%; }
 .section-title { font-family: 'Noto Serif JP', serif; font-size: 17px; font-weight: 600; color: var(--text); }
 
 /* ENTRY CARDS */
@@ -260,7 +282,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 .res-icon.activity { background: #f0eafb; color: #6b3fa8; }
 .res-icon.other { background: var(--surface2); color: var(--text2); }
 .res-body { flex: 1; min-width: 0; }
-.res-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.res-name { font-size: 14px; font-weight: 500; margin-bottom: 4px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: calc(100vw - 100px); }
 .res-date-line { font-size: 12px; color: var(--text3); margin-bottom: 3px; display: flex; align-items: center; gap: 5px; }
 .res-confirm { font-size: 11px; color: var(--text3); font-family: monospace; margin-top: 3px; }
 .res-badge { display: inline-block; font-size: 11px; padding: 2px 9px; border-radius: 99px; font-weight: 500; margin-bottom: 4px; }
@@ -289,6 +311,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 
 /* RES TYPE GRID */
 .res-type-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 16px; }
+@media (max-width: 400px) { .res-type-grid { grid-template-columns: repeat(2, 1fr); } }
 .res-type-btn {
   border: 1px solid var(--border); border-radius: var(--radius-sm);
   padding: 10px 6px; text-align: center; cursor: pointer;
@@ -327,7 +350,7 @@ textarea { resize: vertical; min-height: 100px; line-height: 1.7; }
 .overlay {
   position: fixed; inset: 0; background: rgba(0,0,0,.45);
   display: flex; align-items: flex-start; justify-content: center;
-  padding: 40px 16px; z-index: 200; overflow-y: auto;
+  padding: 16px; z-index: 200; overflow-y: auto;
 }
 .modal {
   background: var(--surface); border-radius: var(--radius);
@@ -588,7 +611,7 @@ function selectMood(btn,mood){document.querySelectorAll('.mood-btn').forEach(b=>
 function addPhotos(input){
   Array.from(input.files).forEach(file=>{
     const r=new FileReader();
-    r.onload=e=>{currentPhotos.push({data:e.target.result});renderPhotoGrid();};
+    r.onload=e=>{currentPhotos.push({data:e.target.result,file:file});renderPhotoGrid();};
     r.readAsDataURL(file);
   });input.value='';
 }
@@ -598,16 +621,31 @@ function renderPhotoGrid(){
 function removePhoto(i){currentPhotos.splice(i,1);renderPhotoGrid();}
 
 // SAVE ENTRY
-function saveEntry(){
+async function saveEntry(){
   const date=document.getElementById('f-date').value;
   const place=document.getElementById('f-place').value;
   const body=document.getElementById('f-body').value;
   if(!date||!place||!body){alert('日付・場所・感想は必須です');return;}
   const hotelOpen=document.getElementById('hotel-fields').classList.contains('open');
   const hotel=hotelOpen?{name:document.getElementById('h-name').value,memo:document.getElementById('h-memo').value,ratings:{...hotelRatings}}:null;
-  const newEntry={id:Date.now(),date,place,title:document.getElementById('f-title').value||place,body,mood:selectedMood,tags:document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),photos:currentPhotos.map(p=>p.data),hotel};
+  const entryId = Date.now();
+  const btn = document.querySelector('.btn-primary');
+  btn.textContent='保存中...';btn.disabled=true;
+  // Upload photos to Firebase Storage
+  let photoUrls = [];
+  for(let i=0;i<currentPhotos.length;i++){
+    const p=currentPhotos[i];
+    if(p.file && window.fbUploadPhoto){
+      try{ const url=await window.fbUploadPhoto(p.file,entryId,i); photoUrls.push(url); }
+      catch(e){ photoUrls.push(p.data); } // fallback to base64
+    } else {
+      photoUrls.push(p.data);
+    }
+  }
+  const newEntry={id:entryId,date,place,title:document.getElementById('f-title').value||place,body,mood:selectedMood,tags:document.getElementById('f-tags').value.split(',').map(t=>t.trim()).filter(Boolean),photos:photoUrls,hotel};
   entries.unshift(newEntry);
   if(window.fbSaveEntry) window.fbSaveEntry(newEntry);
+  btn.innerHTML='<i class="ti ti-check"></i> 保存する';btn.disabled=false;
   clearForm();
   const m=document.getElementById('save-msg');m.style.display='block';setTimeout(()=>m.style.display='none',2000);
   refreshExportSelects();
