@@ -634,7 +634,7 @@ function clearForm(){
   selectedMood='';currentPhotos=[];renderPhotoGrid();
   starKeys.forEach(k=>{hotelRatings[k]=0;renderStars(k,0);document.getElementById('sv-'+k).textContent='−';});
   if(document.getElementById('hotel-fields').classList.contains('open'))toggleHotel();
-  document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('f-date').value=new Date(Date.now()+9*60*60*1000).toISOString().split('T')[0];
 }
 function toggleHotel(){
   const f=document.getElementById('hotel-fields'),b=document.getElementById('hotel-toggle-btn'),open=f.classList.toggle('open');
@@ -870,7 +870,7 @@ function switchTab(tab){
 
 // INIT
 initStars();
-document.getElementById('f-date').value=new Date().toISOString().split('T')[0];
+document.getElementById('f-date').value=new Date(Date.now()+9*60*60*1000).toISOString().split('T')[0];
 
 // Firebase ready → preload initial reservations if Firestore is empty
 function preloadInitialData(){
